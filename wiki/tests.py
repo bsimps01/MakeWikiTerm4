@@ -2,10 +2,8 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from wiki.models import Page
 
-class WikiTestCase(TestCase):
-    def test_true_is_true(self):
-        """ Tests if True is equal to True. Should always pass. """
-        self.assertEqual(True, True)
+class PageDetailViewTests(TestCase):
+
 # Create your tests here.
     def test_detail_page(self):
         """ Tests the slug generated when saving a Page. """
@@ -15,30 +13,34 @@ class WikiTestCase(TestCase):
         user.save()
 
         # Create and save a new page to the test database.
-        page = Page(title="My Test Page", content="test", author=user)
+        page = Page(title="My Detail Test Page", content="details_test", author=user)
         page.save()
 
         # Make sure the slug that was generated in Page.save()
         # matches what we think it should be.
-        self.assertEqual(page.slug, "my-test-page")
+        slug = page.slug
+        response = self.client.get(f'/{slug}/')
 
-        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        
+        info = self.client.get('/')
+        self.assertContains(info, 'makewiki', html=True)
 
-        self.assertEqual(result.status_code, 200)
-
-        result = response.context['pages']
-
-        self.assertQuerysetEqual(result, ['<Page: Test>'])
-
-    def test_multiple_pages(self):
+    def test_edit_page(self):
         # Make some test data to be displayed on the page.
         user = User.objects.create()
+        user.save()
 
-        Page.objects.create(title="My Test Page", content="test", author=user)
-
+        page = Page.objects.create(title="My Test Page", content="edit_test", author=user)
+        page.save()
         # Issue a GET request to the MakeWiki homepage.
         # When we make a request, we get a response back.
-        response = self.client.get('/')
+        post_data = {'title': 'Test', 
+        'content': 'Who dat?', 
+        'author': user.id 
+        }
+
+        response = self.client.post('/form/', data = post_data)
 
         # Check that the response is 200 OK.
         self.assertEqual(response.status_code, 302)
@@ -48,14 +50,19 @@ class WikiTestCase(TestCase):
         responses = response.context['pages']
         self.assertEqual(len(responses), 2)
 
-        post_data = {'title': 'Test', 'content': 'test content', 'author': user.id }
+    def test_page_creation(self):
+                user = User.objects.create()
+        user.save()
 
-        page_object = Page.objects.get(title='Test')
+        page = Page.objects.create(title="My Test Page", content="edit_test", author=user)
+        page.save()
 
-        self.assertQuerysetEqual(
-            responses,
-            ['<Page: My Test Page>', '<Page: Another Test Page>'],
-            ordered=False
-        )
+        post_data = {'title': 'Baseball', 
+        'content': 'I love the game', 
+        'author': user.id 
+        }
 
-        self.assertEqual(page_object.title, 'Test')
+        response = self.client.post('/form/', data = post_data)
+        self.assertEqual(response.status_code, 302)
+
+        self.assertEqual(page_object.title, 'Baseball')
