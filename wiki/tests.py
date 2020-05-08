@@ -47,11 +47,14 @@ class PageDetailViewTests(TestCase):
 
         # Check that the number of pages passed to the template
         # matches the number of pages we have in the database.
-        responses = response.context['pages']
-        self.assertEqual(len(responses), 2)
+        end = self.client.get('/')
+        result = end.context['pages']
+
+        self.assertQuerysetEqual(result, ['<Page: My Test Page>', '<Page: Test>'], ordered=False)
 
     def test_page_creation(self):
-                user = User.objects.create()
+
+        user = User.objects.create()
         user.save()
 
         page = Page.objects.create(title="My Test Page", content="edit_test", author=user)
@@ -63,6 +66,9 @@ class PageDetailViewTests(TestCase):
         }
 
         response = self.client.post('/form/', data = post_data)
+
         self.assertEqual(response.status_code, 302)
 
-        self.assertEqual(page_object.title, 'Baseball')
+        page_object = Page.objects.get(title='Baseball')
+
+        self.assertEqual(page_object.content, 'I love the game')

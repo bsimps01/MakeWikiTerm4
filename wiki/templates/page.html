@@ -7,6 +7,15 @@
       <hr>
       <p>{{ page.content|linebreaksbr }}</p>
       <hr>
+      <form method="POST">
+          <div>
+          {{ form.as_p }}
+      </div>
+      <div>
+          {% csrf_token %}
+      </div>
+          <button class="btn btn-primary" type="submit">Submit</button>
+        </form>
       <a href="{% url 'wiki-list-page' %}">Back to List</a>
     </div>
   </div>
